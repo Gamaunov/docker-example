@@ -1,60 +1,55 @@
 version: '3.5'
 
 services:
-  # Название сервиса
   db:
-    # Образ
     image: postgres
-    # Политика перезапуска
     restart: always
-    # env переменные
-    # Можно выгрузить из файла
-    # env_file:
-    #  - .env
+    hostname: ${POSTGRES_HOST}
+    container_name: postgresDB
     environment:
-      - POSTGRES_PASSWORD=mysecretpassword
-    # Название контейнера
-    container_name: postgres
-    # Тома для постоянного хранения данных (при пересборке не удаляется)
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+    env_file:
+      - .env
     volumes:
       - ./pgdata:/var/lib/postgresql/data
-    # Порт по которому мы сможем обращаться к приложению : порт приложения внутри контейнера
     ports:
-      - '5433:5433'
-    # Сети к которым подключен контейнер
+      - '${POSTGRES_PORT}:5432'
     networks:
       - nest-docker-compose-example-network
-  # Название сервиса
-  app:
-    # Указывает конфигурацию сборки для создания образа контейнера из исходного кода
-    build:
-      # Определяет либо путь к каталогу, содержащему файл Dockerfile, либо URL-адрес репозитория git
-      context: .
-      # Название файла Dockerfile (Dockerfile.production)
-      dockerfile: Dockerfile
-    # Название контейнера
-    container_name: nest-docker-example
-    # env переменные
-    environment:
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - POSTGRES_PASSWORD=mysecretpassword
-      - APP_PORT=9876
-    # Порт по которому мы сможем обращаться к приложению : порт приложения внутри контейнера
-    ports:
-      - '9876:9876'
-    # Определяем порядок запуска. app запуститься после db
+
+  pgadmin4:
+    image: dpage/pgadmin4
+    hostname: pgadmin4
+    container_name: pgadmin4
     depends_on:
       - db
-    # Тома для постоянного хранения данных (при пересборке не удаляется)
-    volumes:
-      - ./src:/app/src
-    # Сети к которым подключен контейнер
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+    ports:
+      - '${PGADMIN_LISTEN_PORT}:80'
     networks:
       - nest-docker-compose-example-network
-# Определяем сеть для наших контейнеров
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - APP_PORT=${APP_PORT}
+    ports:
+      - '${APP_PORT}:9876'
+    depends_on:
+      - db
+    volumes:
+      - ./src:/app/src
+    networks:
+      - nest-docker-compose-example-network
+
 networks:
   nest-docker-compose-example-network:
     driver: bridge
-
-# Для запуска используем docker-compose up

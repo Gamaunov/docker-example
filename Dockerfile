@@ -30,6 +30,15 @@ COPY --chown=node . .
 # Запускаем сборку проекта
 RUN yarn build
 
+# Установка pgAdmin
+RUN apk add --update --no-cache pgadmin4
+
+# Открываем порт для pgAdmin
+EXPOSE ${PGADMIN_LISTEN_PORT}
+
+# Запускаем pgAdmin
+ENTRYPOINT ["pgadmin4"]
+
 # Инструкция EXPOSE информирует Docker о том, что контейнер прослушивает указанные сетевые порты во время выполнения.
 # По умолчанию использует протокол TCP
 EXPOSE ${PORT}
